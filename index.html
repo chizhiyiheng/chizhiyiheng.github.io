@@ -273,6 +273,190 @@ The object to which to send the message specified by aSelector when the timer fi
 
 
   
+    <article id="post-iOS app 键盘卡顿问题解决 " class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/07/25/iOS app 键盘卡顿问题解决 /" class="article-date">
+  <time datetime="2016-07-25T00:55:29.000Z" itemprop="datePublished">2016-07-25</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/iOS-develop/">iOS develop</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/07/25/iOS app 键盘卡顿问题解决 /">iOS app 键盘卡顿问题解决</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="一、问题及思路："><a href="#一、问题及思路：" class="headerlink" title="一、问题及思路："></a>一、问题及思路：</h3><p>  有人反馈键盘卡顿，但我手机上觉得键盘不卡呀，于是我觉得应该用工具来检测一下，而不是肉眼观察，主观判断。</p>
+<h3 id="二、解决过程："><a href="#二、解决过程：" class="headerlink" title="二、解决过程："></a>二、解决过程：</h3><p>我用Instruments里面的Timer Profile分析了一下程序，观察到键盘弹出的时候，执行了哪些方法，耗时多少。观察到有一个方法比较耗时：preshowImage方法，是一个判断最新一张图片的方法，由于遍历了相册中所有的照片，所以在手机中照片非常多的时候，是非常耗时的，而我的测试机中由于照片较少，所以没有那么卡。这是一个问题，代码应该写在输入框右边的加号点击事件中（类似微信），移除该方法了之后，点击输入框，弹出键盘好了很多。我又分析了一下代码，发现有一个方法比较耗时，是tableView reloadData。这句代码真的是既多余，又耗时（写代码的人太随意了）。去掉之后，又快了很多。继续分析代码，发现搜狗输入法这种第三方键盘，比系统键盘耗时，原因是：因为第三方键盘或者是在键盘加个toolbar会导致执行三次UIKeyboardWillShowNotification通知，原生键盘只执行一次，这下找到原因了，通过判断，可以做到第三方键盘也执行一次UIKeyboardWillShowNotification通知方法。</p>
+<h3 id="三、概括解决方法："><a href="#三、概括解决方法：" class="headerlink" title="三、概括解决方法："></a>三、概括解决方法：</h3><ol>
+<li>判断输入框，不调用遍历照片库方法，点击右边加号才调用；</li>
+<li>第三方键盘调用了三次方法，通过判断，改成一次；  </li>
+</ol>
+<pre><code>CGRect begin = [[[note userInfo] objectForKey:@&quot;UIKeyboardFrameBeginUserInfoKey&quot;] CGRectValue];
+
+CGRect end = [[[note userInfo] objectForKey:@&quot;UIKeyboardFrameEndUserInfoKey&quot;] CGRectValue];
+
+if(begin.size.height&gt;0 &amp;&amp; (begin.origin.y-end.origin.y&gt;0)){
+
+}
+</code></pre><ol>
+<li>去掉无用代码reloadData；</li>
+<li>遍历照片库，筛选掉视频，并且只遍历相机胶卷库。 </li>
+<li>排序照片库，取第一个，不遍历。这里其实还有点问题：相册默认是按日期倒序排列的，但是有没有可能改变相册的排序方式？？后续我会再了解一下，再解决。因为这里影响不大，所以暂时先这样写了，性能上优化很多。官方文档这样描述ALAssetsGroup的：</li>
+</ol>
+<pre><code>An ALAssetsGroup is a ordered set of assets. The order of its elements is the order that the user sees in the Photos application
+</code></pre><ol>
+<li><p>代码如下：</p>
+<pre><code>   [assetsLibrary enumerateGroupsWithTypes:ALAssetsGroupSavedPhotos usingBlock:^(ALAssetsGroup *group, BOOL *stop) {
+
+[group setAssetsFilter:[ALAssetsFilter allPhotos]];
+
+if (group) {
+    [group enumerateAssetsWithOptions:NSEnumerationReverse usingBlock:^(ALAsset *result, NSUInteger index, BOOL *stop) {
+        if (result) {
+            NSDate *date = [result valueForProperty:ALAssetPropertyDate];
+            if ([date compare:lastDate] == NSOrderedDescending) {
+                lastDate = date;
+                lastPhoto = result;
+                *stop = YES;
+            }
+        }
+    }];
+
+}
+</code></pre></li>
+</ol>
+<h3 id="四、经验总结"><a href="#四、经验总结" class="headerlink" title="四、经验总结"></a>四、经验总结</h3><p>这个问题最开始是这样的：</p>
+<ol>
+<li>有的人反馈键盘卡，有的人不卡；</li>
+<li>搜狗输入法比系统键盘卡；</li>
+</ol>
+<p>解决之后，大概知道了原因：</p>
+<ol>
+<li>因为有的人相册照片非常多，遍历的次数更多，更耗时。</li>
+<li>搜狗输入法执行三次UIKeyboardWillShowNotification通知，导致键盘弹出的方法执行了三次，导致耗时；</li>
+</ol>
+<p>以后遇到这样的问题，还是应该用工具来检测。尊重客观事实，而不是肉眼观察，主观判断。不能因为遇到问题的人少，就不去解决问题，经过分析，此处代码确实存在很多的问题，写的很不好。</p>
+<p>后记：解决这个问题的时候，还遇到了Instruments的一些问题，后续专门写一篇文章来总结下Instruments的实际使用过程中遇到的问题及解决方法。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://qinghong.github.io/2016/07/25/iOS app 键盘卡顿问题解决 /" data-id="cir23l5px000087kk0w6osf6h" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-iOS几个小知识点整理" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/07/25/iOS几个小知识点整理/" class="article-date">
+  <time datetime="2016-07-25T00:55:29.000Z" itemprop="datePublished">2016-07-25</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/iOS-develop/">iOS develop</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/07/25/iOS几个小知识点整理/">iOS 几个小知识点整理</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="一、NSString用copy还是strong"><a href="#一、NSString用copy还是strong" class="headerlink" title="一、NSString用copy还是strong"></a>一、NSString用copy还是strong</h3><p>首先看下copy修饰可变变量与不可变变量的区别：</p>
+<pre><code>copy修饰可变变量：在赋值指针的同时，也会复制指针指向的内存区域，是深拷贝。
+copy修饰不可变变量：等同于strong，增加引用计数，是浅拷贝。
+</code></pre><p>同理，属性NSString，</p>
+<ol>
+<li>当源字符串是NSString时，不管是strong还是copy，属性的对象都是指向源对象，copy操作是浅拷贝。</li>
+<li>当源字符串是NSMutableString时，strong修饰 增加了源字符串的引用计数，而copy修饰string字符串则是对源字符串进行了深拷贝，产生了新对象，且copy属性对象指向这个新的对象，这个copy属性的类型始终为NSString，是不可变的，因为声明的属性类型是NSString。</li>
+</ol>
+<p>当我们声明NSString属性时，不希望它中途改变，所以大多数情况下我们用copy修饰，避免因为源字符串是可变字符串时对其进行修改。所以当用copy时，源字符串是可变字符串时，源字符串改变，copy属性不随之改变（它是一个新的对象，新的内存地址）。</p>
+<h3 id="二、assign和weak的区别"><a href="#二、assign和weak的区别" class="headerlink" title="二、assign和weak的区别"></a>二、assign和weak的区别</h3><pre><code>assign：只进行简单的赋值，没有其他操作。当assign指向的内存被释放时，不会自动赋值为nil，会发生野指针问题
+weak：arc模式下属性修饰符，当属性所指向的内存被释放时，自动置为nil，避免野指针的发生。
+arc模式下，指针变量一定要用weak修饰，基本数据类型及结构体类型用assign修饰。
+</code></pre><h3 id="三、单例相关"><a href="#三、单例相关" class="headerlink" title="三、单例相关"></a>三、单例相关</h3><p>优点：只会创建一个对象，节约内存。并且很容易被外界访问。</p>
+<p>缺点：</p>
+<ol>
+<li>一个类只有一个对象，可能会造成责任过多，违背了面向对象的单一职责原则。</li>
+<li>单例没有抽象层，所以扩展困难</li>
+<li>不能过多创建单例，因为单例从创建到程序关闭会一直存在，过多的单例会影响性能，浪费资源。</li>
+</ol>
+<p>代码示例：</p>
+<pre><code>+（instancetype）sharedInstance
+{
+static dispatch_once_t once；
+static id sharedInstance；
+dispatch_once(&amp;once,^{
+ sharedInstance = [[self alloc] init];
+});
+return sharedInstance；
+}
+</code></pre><p>代码解析：</p>
+<pre><code>sharedInstance声明为静态变量，静态变量所在的方法返回时，静态变量不会被释放。sharedInstance变量的初始值是nil,当程序第一次执行sharedInstance方法时会创建一个对象，并将新创建的对象的地址赋值给sharedInstance变量。再次执行sharedInstance方法时，无论多少次sharedInstance变量仍然会指向最初那个创建的对象。因为指向对象的sharedInstance变量是强引用的，并且程序永远不会释放该变量，所以sharedInstance变量指向的对象也不会释放。
+</code></pre><p>线程安全：dispatch_once保证程序在运行过程中只会被运行一次，如果线程1执行了sharedInstance方法，创建了一个实例变量，线程2就不会再去执行dispatch_once里面的代码了，从而保证程序只会创建一个实例对象。</p>
+<p>问题：生成100个</p>
+<h3 id="四、ARC和MRC"><a href="#四、ARC和MRC" class="headerlink" title="四、ARC和MRC"></a>四、ARC和MRC</h3><p>MRC环境下编程时属性用retain和assign修饰，ARC时引入了strong和weak。<br>ARC下，不显式指定任何属性关键字时，默认的关键字是atomic,readwrite,strong(对象),assgin(基本数据类型)。<br>ARC/MRC分别都是如何进行内存管理的？</p>
+<p>程序在运行过程中会创建大量的对象，在ObjC中对象存储在堆中，系统并不会自动释放堆中的内存，基本类型是由系统自己管理的，放在栈上。如果一个对象创建并使用后没有得到及时释放那么就会占用大量内存，内存的积累使得系统卡顿，甚至被app杀死（发生crash）。 </p>
+<p>1.MRC环境下：谁创建，谁释放，谁持有，谁释放，减少了各个模块的逻辑耦合。与变量相关的内存管理有retain,release和autorelease。retain和release方法操作的是引用记数，当引用记数为零时，便自动释放内存。并且可以用NSAutoreleasePool对象，对加入自动释放池（autorelease调用）的变量进行管理，当drain时回收内存。</p>
+<p>与属性相关的修饰符有标识符@property (nonatomic/atomic,retain/assign/copy, readonly/readwrite) Number* num;</p>
+<ul>
+<li>nonatomic/atomic，表示该属性是否是对多线程安全的，是不是使用线程锁，默认为atomic，</li>
+<li>retain/assign/copy，是有关对该属性的内存管理的。retain和copy都需要手动释放，assign不会引起引用计数的变化，因为它是直接赋值，两个变量将指向同一个内存地址，另一个变量在使用的时候，该变量不能进行释放。如果其中一个变量释放了，另一个变量将引起野指针问题。如果是基本数据类型，使用assign不会有问题。</li>
+</ul>
+<p>2.ARC环境下：变量修饰符常用的是<strong>strong和</strong>weak。block中解决循环引用问题时常用这对修饰符。<br>属性修饰符有property (nonatomic/atomic, assign/retain/strong/weak/unsafe_unretained/copy,readonly/readwrite)<br>强引用strong增加对象的引用计数，如果是弱引用，则将内存对象在系统中建立映射表，一旦内存对象的引用计数为0，则将该内存对象的所有弱引用对象指针置为nil。  </p>
+<h3 id="五、KVO和KVC"><a href="#五、KVO和KVC" class="headerlink" title="五、KVO和KVC"></a>五、KVO和KVC</h3><p>KVO的使用，就三步：</p>
+<pre><code>1.注册需要观察的对象的属性addObserver:forKeyPath:options:context:
+2.实现observeValueForKeyPath:ofObject:change:context:方法，这个方法当观察的属性变化时会自动调用
+3.取消注册观察removeObserver:forKeyPath:context:
+
+KVC：键值编码，是一种间接访问实例变量的机制（不通过存取方法，访问对象的实例变量）,有两个方法：setValue:forKey，valueForKey
+KVO：键值观察，使用观察者模式，可以使对象获取其他对象属性变化的通知。
+</code></pre><p>KVO是利用isa-swizzling（类型混合指针机制）实现的，得益于Runtime的动态能力，isa指针在运行时被修改，指向一个中间类，而不是原来实例变量真正的类。这个中间类是被监听对象的派生类，重写了setter方法，在setter方法中加入了通知机制，这样当使用KVC修改属性值时，就会发送通知，从而实现了KVO。</p>
+<p>键值观察通知依赖于NSObject的两个方法：willChangeValueForKey:和 didChangevlueForKey: 这两个方法分别在属性被修改之前和之后调用，属性被修改的代码是setValue: forKey: 所以只有在使用KVC命令约定时KVO才可以使用 isa 混写来做到修改属性时触发通知机制。</p>
+<p>###参考：<br>链接：<a href="http://www.jianshu.com/p/7486ebfcd93b" target="_blank" rel="external">http://www.jianshu.com/p/7486ebfcd93b</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://qinghong.github.io/2016/07/25/iOS几个小知识点整理/" data-id="cir23l5qa000287kk8oj91ho3" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
 
 </section>
         
@@ -315,6 +499,14 @@ The object to which to send the message specified by aSelector when the timer fi
         
           <li>
             <a href="/2016/07/25/ios_app_memory_leak_2/">iOS APP内存泄露问题解决（二）</a>
+          </li>
+        
+          <li>
+            <a href="/2016/07/25/iOS app 键盘卡顿问题解决 /">iOS app 键盘卡顿问题解决</a>
+          </li>
+        
+          <li>
+            <a href="/2016/07/25/iOS几个小知识点整理/">iOS 几个小知识点整理</a>
           </li>
         
       </ul>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>iOS app 键盘卡顿问题解决 | 一位iOS开发程序媛的进步阶梯</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="一、问题及思路：  有人反馈键盘卡顿，但我手机上觉得键盘不卡呀，于是我觉得应该用工具来检测一下，而不是肉眼观察，主观判断。
+二、解决过程：我用Instruments里面的Timer Profile分析了一下程序，观察到键盘弹出的时候，执行了哪些方法，耗时多少。观察到有一个方法比较耗时：preshowImage方法，是一个判断最新一张图片的方法，由于遍历了相册中所有的照片，所以在手机中照片非常多的时">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iOS app 键盘卡顿问题解决">
+<meta property="og:url" content="http://qinghong.github.io/2016/07/25/iOS app 键盘卡顿问题解决 /index.html">
+<meta property="og:site_name" content="一位iOS开发程序媛的进步阶梯">
+<meta property="og:description" content="一、问题及思路：  有人反馈键盘卡顿，但我手机上觉得键盘不卡呀，于是我觉得应该用工具来检测一下，而不是肉眼观察，主观判断。
+二、解决过程：我用Instruments里面的Timer Profile分析了一下程序，观察到键盘弹出的时候，执行了哪些方法，耗时多少。观察到有一个方法比较耗时：preshowImage方法，是一个判断最新一张图片的方法，由于遍历了相册中所有的照片，所以在手机中照片非常多的时">
+<meta property="og:updated_time" content="2016-07-25T13:52:11.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iOS app 键盘卡顿问题解决">
+<meta name="twitter:description" content="一、问题及思路：  有人反馈键盘卡顿，但我手机上觉得键盘不卡呀，于是我觉得应该用工具来检测一下，而不是肉眼观察，主观判断。
+二、解决过程：我用Instruments里面的Timer Profile分析了一下程序，观察到键盘弹出的时候，执行了哪些方法，耗时多少。观察到有一个方法比较耗时：preshowImage方法，是一个判断最新一张图片的方法，由于遍历了相册中所有的照片，所以在手机中照片非常多的时">
+  
+    <link rel="alternate" href="/atom.xml" title="一位iOS开发程序媛的进步阶梯" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">一位iOS开发程序媛的进步阶梯</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" results="0" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://qinghong.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-iOS app 键盘卡顿问题解决 " class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/07/25/iOS app 键盘卡顿问题解决 /" class="article-date">
+  <time datetime="2016-07-25T00:55:29.000Z" itemprop="datePublished">2016-07-25</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/iOS-develop/">iOS develop</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      iOS app 键盘卡顿问题解决
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="一、问题及思路："><a href="#一、问题及思路：" class="headerlink" title="一、问题及思路："></a>一、问题及思路：</h3><p>  有人反馈键盘卡顿，但我手机上觉得键盘不卡呀，于是我觉得应该用工具来检测一下，而不是肉眼观察，主观判断。</p>
+<h3 id="二、解决过程："><a href="#二、解决过程：" class="headerlink" title="二、解决过程："></a>二、解决过程：</h3><p>我用Instruments里面的Timer Profile分析了一下程序，观察到键盘弹出的时候，执行了哪些方法，耗时多少。观察到有一个方法比较耗时：preshowImage方法，是一个判断最新一张图片的方法，由于遍历了相册中所有的照片，所以在手机中照片非常多的时候，是非常耗时的，而我的测试机中由于照片较少，所以没有那么卡。这是一个问题，代码应该写在输入框右边的加号点击事件中（类似微信），移除该方法了之后，点击输入框，弹出键盘好了很多。我又分析了一下代码，发现有一个方法比较耗时，是tableView reloadData。这句代码真的是既多余，又耗时（写代码的人太随意了）。去掉之后，又快了很多。继续分析代码，发现搜狗输入法这种第三方键盘，比系统键盘耗时，原因是：因为第三方键盘或者是在键盘加个toolbar会导致执行三次UIKeyboardWillShowNotification通知，原生键盘只执行一次，这下找到原因了，通过判断，可以做到第三方键盘也执行一次UIKeyboardWillShowNotification通知方法。</p>
+<h3 id="三、概括解决方法："><a href="#三、概括解决方法：" class="headerlink" title="三、概括解决方法："></a>三、概括解决方法：</h3><ol>
+<li>判断输入框，不调用遍历照片库方法，点击右边加号才调用；</li>
+<li>第三方键盘调用了三次方法，通过判断，改成一次；  </li>
+</ol>
+<pre><code>CGRect begin = [[[note userInfo] objectForKey:@&quot;UIKeyboardFrameBeginUserInfoKey&quot;] CGRectValue];
+
+CGRect end = [[[note userInfo] objectForKey:@&quot;UIKeyboardFrameEndUserInfoKey&quot;] CGRectValue];
+
+if(begin.size.height&gt;0 &amp;&amp; (begin.origin.y-end.origin.y&gt;0)){
+
+}
+</code></pre><ol>
+<li>去掉无用代码reloadData；</li>
+<li>遍历照片库，筛选掉视频，并且只遍历相机胶卷库。 </li>
+<li>排序照片库，取第一个，不遍历。这里其实还有点问题：相册默认是按日期倒序排列的，但是有没有可能改变相册的排序方式？？后续我会再了解一下，再解决。因为这里影响不大，所以暂时先这样写了，性能上优化很多。官方文档这样描述ALAssetsGroup的：</li>
+</ol>
+<pre><code>An ALAssetsGroup is a ordered set of assets. The order of its elements is the order that the user sees in the Photos application
+</code></pre><ol>
+<li><p>代码如下：</p>
+<pre><code>   [assetsLibrary enumerateGroupsWithTypes:ALAssetsGroupSavedPhotos usingBlock:^(ALAssetsGroup *group, BOOL *stop) {
+
+[group setAssetsFilter:[ALAssetsFilter allPhotos]];
+
+if (group) {
+    [group enumerateAssetsWithOptions:NSEnumerationReverse usingBlock:^(ALAsset *result, NSUInteger index, BOOL *stop) {
+        if (result) {
+            NSDate *date = [result valueForProperty:ALAssetPropertyDate];
+            if ([date compare:lastDate] == NSOrderedDescending) {
+                lastDate = date;
+                lastPhoto = result;
+                *stop = YES;
+            }
+        }
+    }];
+
+}
+</code></pre></li>
+</ol>
+<h3 id="四、经验总结"><a href="#四、经验总结" class="headerlink" title="四、经验总结"></a>四、经验总结</h3><p>这个问题最开始是这样的：</p>
+<ol>
+<li>有的人反馈键盘卡，有的人不卡；</li>
+<li>搜狗输入法比系统键盘卡；</li>
+</ol>
+<p>解决之后，大概知道了原因：</p>
+<ol>
+<li>因为有的人相册照片非常多，遍历的次数更多，更耗时。</li>
+<li>搜狗输入法执行三次UIKeyboardWillShowNotification通知，导致键盘弹出的方法执行了三次，导致耗时；</li>
+</ol>
+<p>以后遇到这样的问题，还是应该用工具来检测。尊重客观事实，而不是肉眼观察，主观判断。不能因为遇到问题的人少，就不去解决问题，经过分析，此处代码确实存在很多的问题，写的很不好。</p>
+<p>后记：解决这个问题的时候，还遇到了Instruments的一些问题，后续专门写一篇文章来总结下Instruments的实际使用过程中遇到的问题及解决方法。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://qinghong.github.io/2016/07/25/iOS app 键盘卡顿问题解决 /" data-id="cir23l5px000087kk0w6osf6h" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/07/25/ios_app_memory_leak_2/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          iOS APP内存泄露问题解决（二）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/07/25/iOS几个小知识点整理/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">iOS 几个小知识点整理</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/iOS-develop/">iOS develop</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/07/">July 2016</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2016/07/25/ios_app_memory_leak_1/">iOS app 内存泄露问题解决（一）</a>
+          </li>
+        
+          <li>
+            <a href="/2016/07/25/ios_app_memory_leak_2/">iOS APP内存泄露问题解决（二）</a>
+          </li>
+        
+          <li>
+            <a href="/2016/07/25/iOS app 键盘卡顿问题解决 /">iOS app 键盘卡顿问题解决</a>
+          </li>
+        
+          <li>
+            <a href="/2016/07/25/iOS几个小知识点整理/">iOS 几个小知识点整理</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2016 John Doe<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
