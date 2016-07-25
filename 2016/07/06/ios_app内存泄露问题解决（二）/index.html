@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="##iOS APP内存泄露问题解决（二）
+###一、问题描述ViewController不释放，会导致很多问题，我举几个我遇到的例子。
+
+我做的是一个企业即时通讯APP，我做了一个群公告功能，发布群公告时会发送@all消息。某天，我做完了群公告，发了一个群公告试试，结果，消息群发了，发到了好几个聊天会话中去了。因为chattingViewController没有释放掉，发送@all消息的通知，那些">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hexo">
+<meta property="og:url" content="http://yoursite.com/2016/07/06/ios_app内存泄露问题解决（二）/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="##iOS APP内存泄露问题解决（二）
+###一、问题描述ViewController不释放，会导致很多问题，我举几个我遇到的例子。
+
+我做的是一个企业即时通讯APP，我做了一个群公告功能，发布群公告时会发送@all消息。某天，我做完了群公告，发了一个群公告试试，结果，消息群发了，发到了好几个聊天会话中去了。因为chattingViewController没有释放掉，发送@all消息的通知，那些">
+<meta property="og:updated_time" content="2016-07-06T06:35:02.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hexo">
+<meta name="twitter:description" content="##iOS APP内存泄露问题解决（二）
+###一、问题描述ViewController不释放，会导致很多问题，我举几个我遇到的例子。
+
+我做的是一个企业即时通讯APP，我做了一个群公告功能，发布群公告时会发送@all消息。某天，我做完了群公告，发了一个群公告试试，结果，消息群发了，发到了好几个聊天会话中去了。因为chattingViewController没有释放掉，发送@all消息的通知，那些">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" results="0" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-ios_app内存泄露问题解决（二）" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/07/06/ios_app内存泄露问题解决（二）/" class="article-date">
+  <time datetime="2016-07-06T06:35:02.000Z" itemprop="datePublished">2016-07-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>##iOS APP内存泄露问题解决（二）</p>
+<p>###一、问题描述<br>ViewController不释放，会导致很多问题，我举几个我遇到的例子。</p>
+<ol>
+<li>我做的是一个企业即时通讯APP，我做了一个群公告功能，发布群公告时会发送@all消息。某天，我做完了群公告，发了一个群公告试试，结果，消息群发了，发到了好几个聊天会话中去了。因为chattingViewController没有释放掉，发送@all消息的通知，那些没有被释放掉的chattingViewController都收到了，都执行了发送@all消息的动作，所以导致很多会话都发送了@all消息。</li>
+<li>我做一个踢出登录的功能，退到登录页面的时候，之前的主界面都没有被释放，踢出登录会发一个通知，显示一个alert：你被踢出登录。多次被踢出，就会创建多个主界面，多个主界面都会收到这个通知，于是就显示了多个alertView。</li>
+<li>NSTimer，NSTimer会对它的target持有强引用，如果NSTimer不释放掉，就会一直持有它的target的强引用，会一直都释放不掉，造成内存泄露。</li>
+</ol>
+<p>###二、解决方法<br>怎么知道ViewController有没有被释放，有一个方法就是可以通过看ViewController有没有执行dealloc方法。<br>大概有几个地方，比较容易引起内存泄露</p>
+<ol>
+<li>循环引用；最多的就是block引起的循环引用。</li>
+</ol>
+<pre><code>（1）某个类将block作为自己的属性变量，然后该类在block的方法体里面又使用了该类本身;相互持有，导致都释放不了。
+
+    代码例子：
+    [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
+    make.left.right.equalTo(self.view);
+    make.top.equalTo(self.navigationBar.mas_bottom);
+    make.bottom.equalTo(self.view);
+    }];
+    修改为：
+    __weak typeof(self) weakSelf = self;
+    块内的self，换成weakSelf就行了。
+    block不是self的属性或者变量时，在block内使用self不会循环引用;
+
+
+（2）如果块是一个单例持有的，块内又使用了ViewController这个类，会引起循环引用。
+
+    例子：
+     [[OutsidePacketsSchedule shareInstance] sendParameters:dict requestCmd:@&quot;addCustomEmoReq&quot; responseCmd:@&quot;addCustomEmoRsp&quot; complete:^(id response, NSError *error) {
+    if(!error){
+        [weakSelf.view setToast:@&quot;添加自定义表情成功&quot;];
+    }
+    }];
+    上例中的单例持有的代码块中要用弱引用，原因是：单例不会被释放掉，它会一直持有block，导致该block所在的ViewController释放不掉。
+
+
+（3）如果是方法中的参数是block，不会造成循环引用，因为方法中的block是位于栈内存的，方法返回后，block将会无效。
+
+（4）堆内存的一个明显的特性就是:它会强引用block中的对象,如果该block被其他不会被释放的东西给强引用了,就会导致循环引用.
+</code></pre><ol>
+<li><p>NSTimer和CADisplayLink这种；</p>
+<pre><code>   + (NSTimer *)scheduledTimerWithTimeInterval:(NSTimeInterval)ti
+                             target:(id)aTarget
+                           selector:(SEL)aSelector
+                           userInfo:(nullable id)userInfo
+                            repeats:(BOOL)yesOrN{
+
+}
+从文档中方法的定义上可以看到，NSTimer是会强引用它的target的，像其他的delegate一般都是weak的，所以这里比较特殊。
+NSTimer Class Reference是这样对target描述的：
+The object to which to send the message specified by aSelector when the timer fires. The timer maintains a strong reference to target until it (the timer) is invalidated.
+</code></pre></li>
+</ol>
+<pre><code>NSTimer Class Reference还指出: Runloop会强引用timer，因为如果一个timer是循环的，如果没被强引用，那么在函数返回后，则会被销毁，就不能循环地通知持有的target。所以NSTimer是被放到Runloop中执行的。
+    如果我们不调用invalidate timer,runloop就会一直持有timer,而timer也一直持有ViewController，这样就会造成内存泄露。
+
+    解决这类问题的方法就是：在不需要NSTimer的时候，及时调用[self.timer invalidate]。千万不要在dealloc方法中调用，因为NSTimer强引用self，所以不会执行dealloc方法。
+</code></pre><ol>
+<li><p>delegate一般是weak的情况分析；<br>这里我遇到的情况，在我的第一篇博客里面有写到，感兴趣的可以去看一下。</p>
+</li>
+<li><p>对象之间的循环引用：例子：两个ViewController都需要使用对方，这个时候可以用@class</p>
+</li>
+</ol>
+<ol>
+<li>是我解决ViewController不释放的时候遇到的一个个例问题，当时把ViewController里的每行代码都分析了，强引用的地方都解决了，还是不执行dealloc方法，查了好久，请教了好几个同事，最后，发现，竟然是这个ViewController没有开启ARC，不知道是被那个队友给关闭了，哭瞎=。=</li>
+</ol>
+<p>###三、最后的建议</p>
+<p>   上文中我主要是根据自己在项目中遇到的问题，及如何解决的，来描述的。不是很详细深入，这里建议多看一下官方文档，一般的问题都可以通过阅读官方文档来解决的。</p>
+<p>//创建<strong>weak弱引用，防止强引用互相持有
+</strong>weak <strong>typeof(self)weakSelf = self;<br>AFNetworkReachabilityStatusBlock callback = ^(AFNetworkReachabilityStatus status) {<br>    //创建局部</strong>strong强引用，防止多线程情况下weakSelf被析构<br>     <strong>strong </strong>typeof(weakSelf)strongSelf = weakSelf;<br>    strongSelf.networkReachabilityStatus = status;<br>    if (strongSelf.networkReachabilityStatusBlock) {<br>         strongSelf.networkReachabilityStatusBlock(status);<br>    }<br>};</p>
+<p>通过Xcode菜单打开instruments:</p>
+<ol>
+<li><p>Choose Xcode &gt; Open Developer Tool &gt; Instruments<br>通过Xcode project打开instruments:</p>
+</li>
+<li><p>Choose Product &gt; Profile</p>
+</li>
+<li>Click and hold the Run button in the Xcode toolbar and choose Profile.</li>
+<li>Press Command-I</li>
+</ol>
+<p>Apple 官方的建议是，传进 Block 之前，把 ‘self’ 转换成 weak automatic 的变量，这样在 Block 中就不会出现对 self 的强引用。如果在 Block 执行完成之前，self 被释放了，weakSelf 也会变为 nil。</p>
+<p>clang 的文档表示，在 doSomething 内，weakSelf 不会被释放。但，下面的情况除外：</p>
+<p>在 doSomething 中，weakSelf 不会变成 nil，不过在 doSomething 执行完成，调用第二个方法 doOtherThing 的时候，weakSelf 有可能被释放，于是，strongSelf 就派上用场了：</p>
+<pre><code>__strong __typeof(self) strongSelf = weakSelf;__strong 确保在 Block 内，strongSelf 不会被释放。
+</code></pre><p>总结</p>
+<p>在 Block 内如果需要访问 self 的方法、变量，建议使用 weakSelf。<br>如果在 Block 内需要多次 访问 self，则需要使用 strongSelf。<br><a href="https://github.com/100mango/zen/blob/master/iOS%E5%A4%AF%E5%AE%9E%EF%BC%9AARC%E6%97%B6%E4%BB%A3%E7%9A%84%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/%23iOS%E5%A4%AF%E5%AE%9E%EF%BC%9AARC%E6%97%B6%E4%BB%A3%E7%9A%84%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86.md" target="_blank" rel="external">https://github.com/100mango/zen/blob/master/iOS%E5%A4%AF%E5%AE%9E%EF%BC%9AARC%E6%97%B6%E4%BB%A3%E7%9A%84%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/%23iOS%E5%A4%AF%E5%AE%9E%EF%BC%9AARC%E6%97%B6%E4%BB%A3%E7%9A%84%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86.md</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2016/07/06/ios_app内存泄露问题解决（二）/" data-id="cir1ypscy0001rbkkhy94kjuq" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/07/06/ios_app_内存泄露问题解决（一）/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          (no title)
+        
+      </div>
+    </a>
+  
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/iOS-develop/">iOS develop</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/07/">July 2016</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2016/07/25/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2016/07/25/ios_app_memory_leak_1/">iOS app 内存泄露问题解决（一）</a>
+          </li>
+        
+          <li>
+            <a href="/2016/07/25/ios_app_memory_leak_2/">iOS APP内存泄露问题解决（二）</a>
+          </li>
+        
+          <li>
+            <a href="/2016/07/06/ios_app_内存泄露问题解决（一）/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2016/07/06/ios_app内存泄露问题解决（二）/">(no title)</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2016 John Doe<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
