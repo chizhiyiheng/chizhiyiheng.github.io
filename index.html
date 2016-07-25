@@ -96,7 +96,96 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://qinghong.github.io/2016/07/25/hello-world/" data-id="cir22kpg300005rkkgjputtqm" class="article-share-link">Share</a>
+      <a data-url="http://qinghong.github.io/2016/07/25/hello-world/" data-id="cir22x35u00016kkk9oua95vs" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-ios_app_memory_leak_1" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/07/25/ios_app_memory_leak_1/" class="article-date">
+  <time datetime="2016-07-25T00:55:29.000Z" itemprop="datePublished">2016-07-25</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/iOS-develop/">iOS develop</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/07/25/ios_app_memory_leak_1/">iOS app 内存泄露问题解决（一）</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="一、开篇"><a href="#一、开篇" class="headerlink" title="一、开篇"></a>一、开篇</h3><p>最近几天在做APP的性能优化问题，遇到了很多问题，所以来总结和分享一下。</p>
+<p>内存泄露解决分为了三步：</p>
+<ol>
+<li>静态分析：Instruments的Analyze。通过静态分析我们可以最初步的了解到代码的一些不规范的地方或者是存在的内存泄漏，还能发现一些代码逻辑上的错误；</li>
+<li>解决ViewController不释放的问题；</li>
+<li>Instruments的Leaks。运行时分析内存泄露情况并解决；</li>
+</ol>
+<p>根据这三步的解决内存泄露问题，每一步包含的内容比较多，所以我分为三篇文章来写。</p>
+<p>这篇文章是总结静态分析代码的时候遇到的常见的几类问题，及解决方法。首先会介绍下内存泄露相关的基础知识。</p>
+<h3 id="二、内存泄露相关的基础知识"><a href="#二、内存泄露相关的基础知识" class="headerlink" title="二、内存泄露相关的基础知识"></a>二、内存泄露相关的基础知识</h3><h4 id="1-概念"><a href="#1-概念" class="headerlink" title="1.概念"></a>1.概念</h4><pre><code>内存泄露：如果程序运行时一直分配内存而不及时释放无用的内存，程序占用的内存越来越大，直到把系统分配给该APP的内存消耗殚尽，程序因无内存可用导致崩溃，这样的情况我们称之为内存泄漏。
+</code></pre><h4 id="2-可能引起的问题"><a href="#2-可能引起的问题" class="headerlink" title="2. 可能引起的问题"></a>2. 可能引起的问题</h4><pre><code>1)内存消耗殆尽的时候，程序会因没有内存被杀死，即crash。
+2)当内存快要用完的时候，会非常的卡顿 
+3)如果是ViewController没有释放掉，引起的内存泄露，还会引起其他很多问题，尤其是和通知相关的。没有被释放掉的ViewController还能接收通知，还会执行相关的动作，所以会引起各种各样的异常情况的发生。
+</code></pre><h3 id="三、Analyze检测出的几种常见问题"><a href="#三、Analyze检测出的几种常见问题" class="headerlink" title="三、Analyze检测出的几种常见问题"></a>三、Analyze检测出的几种常见问题</h3><p>使用Analyze能够发现一些代码不规范及可能引起内存泄露的代码。下面是我调试的过程中遇到的一些问题。</p>
+<ol>
+<li><p>value stored to ‘width’during its initialization is never read。</p>
+<pre><code>该问题的原因是：变量申请了存内并初始化了，但没有用使此变量，接着将此变量又从新赋值.
+
+- (CGSize)sizeForContent:(MGCMessageBaseEntity*)message
+{
+
+       float width = size.width &lt; 20 ? 20 : size.width + 5;
+    width = size.width &gt; MAX_CHAT_TEXT_WIDTH ? MAX_CHAT_TEXT_WIDTH : size.width;
+    return CGSizeMake(width, size.height + 3);
+}
+解决方法是：float width = size.width &gt; MAX_CHAT_TEXT_WIDTH ? MAX_CHAT_TEXT_WIDTH : size.width;
+</code></pre></li>
+</ol>
+<pre><code>还有一种情况是：为同一个数据源分配了两块内存，导致其中一块潜在的会引起内存泄露。
+ NSArray *arr1 = [[NSArray alloc]init];
+if(index == 1){
+    arr1 = self.usersArray;
+    }else{
+    arr1 = self.editArray;
+    }
+因为self.usersArray和self.editArray都是被初始化过的数组，将它们赋值给了arr1，arr1又申请了内存，所以就有一个内存块是空闲的。解决方法是：NSArray *arr1；不为arr1分配内存。
+</code></pre><ol>
+<li><p>Value stored to ‘titleString’ is never read</p>
+<pre><code>该变量从来没有被使用
+</code></pre></li>
+</ol>
+<ol>
+<li><p>Potential leak of an object allocated on line 226 and stored into ‘smallclassname’</p>
+<pre><code>潜在的内存泄露：这里主要是一些非OC对象，ARC不会对它进行释放，所以造成了一直没有释放。比如一些类型：CGImageRef（对应调用CGImageRelease）、CGContextRef（对应调用CGContextRelease）CGColorSpaceRef（对应CGColorSpaceRelease） 这些都是非OC对象，所以要自己记着释放掉。
+</code></pre></li>
+</ol>
+<ol>
+<li>Analyze还能检查出一些逻辑上的错误，并且指出原因，简直太好用了。不出例子了，因为代码已经解决了好几天了，现在不存在有逻辑错误的代码了。</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://qinghong.github.io/2016/07/25/ios_app_memory_leak_1/" data-id="cir22x35c00006kkk6ecorbzg" class="article-share-link">Share</a>
       
       
     </footer>
@@ -219,96 +308,7 @@ The object to which to send the message specified by aSelector when the timer fi
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://qinghong.github.io/2016/07/25/ios_app_memory_leak_2/" data-id="cir22kpg800015rkktmlblvga" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-ios_app_memory_leak_1" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2016/07/25/ios_app_memory_leak_1/" class="article-date">
-  <time datetime="2016-07-25T00:55:29.000Z" itemprop="datePublished">2016-07-25</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/iOS-develop/">iOS develop</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2016/07/25/ios_app_memory_leak_1/">iOS app 内存泄露问题解决（一）</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="一、开篇"><a href="#一、开篇" class="headerlink" title="一、开篇"></a>一、开篇</h3><p>最近几天在做APP的性能优化问题，遇到了很多问题，所以来总结和分享一下。</p>
-<p>内存泄露解决分为了三步：</p>
-<ol>
-<li>静态分析：Instruments的Analyze。通过静态分析我们可以最初步的了解到代码的一些不规范的地方或者是存在的内存泄漏，还能发现一些代码逻辑上的错误；</li>
-<li>解决ViewController不释放的问题；</li>
-<li>Instruments的Leaks。运行时分析内存泄露情况并解决；</li>
-</ol>
-<p>根据这三步的解决内存泄露问题，每一步包含的内容比较多，所以我分为三篇文章来写。</p>
-<p>这篇文章是总结静态分析代码的时候遇到的常见的几类问题，及解决方法。首先会介绍下内存泄露相关的基础知识。</p>
-<h3 id="二、内存泄露相关的基础知识"><a href="#二、内存泄露相关的基础知识" class="headerlink" title="二、内存泄露相关的基础知识"></a>二、内存泄露相关的基础知识</h3><h4 id="1-概念"><a href="#1-概念" class="headerlink" title="1.概念"></a>1.概念</h4><pre><code>内存泄露：如果程序运行时一直分配内存而不及时释放无用的内存，程序占用的内存越来越大，直到把系统分配给该APP的内存消耗殚尽，程序因无内存可用导致崩溃，这样的情况我们称之为内存泄漏。
-</code></pre><h4 id="2-可能引起的问题"><a href="#2-可能引起的问题" class="headerlink" title="2. 可能引起的问题"></a>2. 可能引起的问题</h4><pre><code>1)内存消耗殆尽的时候，程序会因没有内存被杀死，即crash。
-2)当内存快要用完的时候，会非常的卡顿 
-3)如果是ViewController没有释放掉，引起的内存泄露，还会引起其他很多问题，尤其是和通知相关的。没有被释放掉的ViewController还能接收通知，还会执行相关的动作，所以会引起各种各样的异常情况的发生。
-</code></pre><h3 id="三、Analyze检测出的几种常见问题"><a href="#三、Analyze检测出的几种常见问题" class="headerlink" title="三、Analyze检测出的几种常见问题"></a>三、Analyze检测出的几种常见问题</h3><p>使用Analyze能够发现一些代码不规范及可能引起内存泄露的代码。下面是我调试的过程中遇到的一些问题。</p>
-<ol>
-<li><p>value stored to ‘width’during its initialization is never read。</p>
-<pre><code>该问题的原因是：变量申请了存内并初始化了，但没有用使此变量，接着将此变量又从新赋值.
-
-- (CGSize)sizeForContent:(MGCMessageBaseEntity*)message
-{
-
-       float width = size.width &lt; 20 ? 20 : size.width + 5;
-    width = size.width &gt; MAX_CHAT_TEXT_WIDTH ? MAX_CHAT_TEXT_WIDTH : size.width;
-    return CGSizeMake(width, size.height + 3);
-}
-解决方法是：float width = size.width &gt; MAX_CHAT_TEXT_WIDTH ? MAX_CHAT_TEXT_WIDTH : size.width;
-</code></pre></li>
-</ol>
-<pre><code>还有一种情况是：为同一个数据源分配了两块内存，导致其中一块潜在的会引起内存泄露。
- NSArray *arr1 = [[NSArray alloc]init];
-if(index == 1){
-    arr1 = self.usersArray;
-    }else{
-    arr1 = self.editArray;
-    }
-因为self.usersArray和self.editArray都是被初始化过的数组，将它们赋值给了arr1，arr1又申请了内存，所以就有一个内存块是空闲的。解决方法是：NSArray *arr1；不为arr1分配内存。
-</code></pre><ol>
-<li><p>Value stored to ‘titleString’ is never read</p>
-<pre><code>该变量从来没有被使用
-</code></pre></li>
-</ol>
-<ol>
-<li><p>Potential leak of an object allocated on line 226 and stored into ‘smallclassname’</p>
-<pre><code>潜在的内存泄露：这里主要是一些非OC对象，ARC不会对它进行释放，所以造成了一直没有释放。比如一些类型：CGImageRef（对应调用CGImageRelease）、CGContextRef（对应调用CGContextRelease）CGColorSpaceRef（对应CGColorSpaceRelease） 这些都是非OC对象，所以要自己记着释放掉。
-</code></pre></li>
-</ol>
-<ol>
-<li>Analyze还能检查出一些逻辑上的错误，并且指出原因，简直太好用了。不出例子了，因为代码已经解决了好几天了，现在不存在有逻辑错误的代码了。</li>
-</ol>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://qinghong.github.io/2016/07/25/ios_app_memory_leak_1/" data-id="cir22kpgc00025rkk2hjyw4d9" class="article-share-link">Share</a>
+      <a data-url="http://qinghong.github.io/2016/07/25/ios_app_memory_leak_2/" data-id="cir22x36000036kkktid5mml2" class="article-share-link">Share</a>
       
       
     </footer>
@@ -359,11 +359,11 @@ if(index == 1){
           </li>
         
           <li>
-            <a href="/2016/07/25/ios_app_memory_leak_2/">iOS APP内存泄露问题解决（二）</a>
+            <a href="/2016/07/25/ios_app_memory_leak_1/">iOS app 内存泄露问题解决（一）</a>
           </li>
         
           <li>
-            <a href="/2016/07/25/ios_app_memory_leak_1/">iOS app 内存泄露问题解决（一）</a>
+            <a href="/2016/07/25/ios_app_memory_leak_2/">iOS APP内存泄露问题解决（二）</a>
           </li>
         
       </ul>
