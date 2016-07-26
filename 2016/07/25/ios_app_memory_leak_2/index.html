@@ -84,7 +84,7 @@
   -->  
   <p class="article-time">
     <time datetime="2016-07-25T00:55:29.000Z" itemprop="datePublished">2016-07-25</time>
-    Updated:<time datetime="2016-07-26T00:29:16.000Z" itemprop="dateModified">2016-07-26</time>
+    Updated:<time datetime="2016-07-26T00:31:27.000Z" itemprop="dateModified">2016-07-26</time>
     
   </p>
 </header>
@@ -119,8 +119,6 @@
     __weak typeof(self) weakSelf = self;
     块内的self，换成weakSelf就行了。
     block不是self的属性或者变量时，在block内使用self不会循环引用;
-
-
 （2）如果块是一个单例持有的，块内又使用了ViewController这个类，会引起循环引用。
 
     例子：
@@ -130,10 +128,7 @@
     }
     }];
     上例中的单例持有的代码块中要用弱引用，原因是：单例不会被释放掉，它会一直持有block，导致该block所在的ViewController释放不掉。
-
-
 （3）如果是方法中的参数是block，不会造成循环引用，因为方法中的block是位于栈内存的，方法返回后，block将会无效。
-
 （4）堆内存的一个明显的特性就是:它会强引用block中的对象,如果该block被其他不会被释放的东西给强引用了,就会导致循环引用.
 </code></pre><ol>
 <li><p>NSTimer和CADisplayLink这种；</p>
@@ -158,9 +153,8 @@ The object to which to send the message specified by aSelector when the timer fi
 </li>
 <li><p>对象之间的循环引用：例子：两个ViewController都需要使用对方，这个时候可以用@class</p>
 </li>
-</ol>
-<ol>
-<li>是我解决ViewController不释放的时候遇到的一个个例问题，当时把ViewController里的每行代码都分析了，强引用的地方都解决了，还是不执行dealloc方法，查了好久，请教了好几个同事，最后，发现，竟然是这个ViewController没有开启ARC，不知道是被那个队友给关闭了，哭瞎=。=</li>
+<li><p>是我解决ViewController不释放的时候遇到的一个个例问题，当时把ViewController里的每行代码都分析了，强引用的地方都解决了，还是不执行dealloc方法，查了好久，请教了好几个同事，最后，发现，竟然是这个ViewController没有开启ARC，不知道是被那个队友给关闭了，哭瞎=。=</p>
+</li>
 </ol>
 <h3 id="三、最后的建议"><a href="#三、最后的建议" class="headerlink" title="三、最后的建议"></a>三、最后的建议</h3><p>   上文中我主要是根据自己在项目中遇到的问题，及如何解决的，来描述的。不是很详细深入，这里建议多看一下官方文档，一般的问题都可以通过阅读官方文档来解决的。</p>
 <p>//创建<strong>weak弱引用，防止强引用互相持有
