@@ -1,120 +1,105 @@
-<!DOCTYPE html>
-<html>
+
+ <!DOCTYPE HTML>
+<html  xmlns:wb="http://open.weibo.com/wb">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   
-  <title>iOS app 内存泄露问题解决（一） | 一枚iOS开发程序媛的进步阶梯</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一、开篇最近几天在做APP的性能优化问题，遇到了很多问题，所以来总结和分享一下。
+    <title>iOS app 内存泄露问题解决（一） | 一枚iOS开发程序媛的进步阶梯</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3, minimum-scale=1">
+    
+    <meta name="author" content="Qinghong Liu">
+    
+    <meta name="description" content="一、开篇最近几天在做APP的性能优化问题，遇到了很多问题，所以来总结和分享一下。
 内存泄露解决分为了三步：
 
 静态分析：Instruments的Analyze。通过静态分析我们可以最初步的了解到代码的一些不规范的地方或者是存在的内存泄漏，还能发现一些代码逻辑上的错误；
-解决ViewController不释放的问题；
-Instruments的Leaks。运行时分析内存泄露情况并解决；
-
-根据这三步的">
-<meta property="og:type" content="article">
-<meta property="og:title" content="iOS app 内存泄露问题解决（一）">
-<meta property="og:url" content="http://qinghong.github.io/2016/07/25/ios_app_memory_leak_1/index.html">
-<meta property="og:site_name" content="一枚iOS开发程序媛的进步阶梯">
-<meta property="og:description" content="一、开篇最近几天在做APP的性能优化问题，遇到了很多问题，所以来总结和分享一下。
-内存泄露解决分为了三步：
-
-静态分析：Instruments的Analyze。通过静态分析我们可以最初步的了解到代码的一些不规范的地方或者是存在的内存泄漏，还能发现一些代码逻辑上的错误；
-解决ViewController不释放的问题；
-Instruments的Leaks。运行时分析内存泄露情况并解决；
-
-根据这三步的">
-<meta property="og:updated_time" content="2016-07-25T12:38:38.000Z">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="iOS app 内存泄露问题解决（一）">
-<meta name="twitter:description" content="一、开篇最近几天在做APP的性能优化问题，遇到了很多问题，所以来总结和分享一下。
-内存泄露解决分为了三步：
-
-静态分析：Instruments的Analyze。通过静态分析我们可以最初步的了解到代码的一些不规范的地方或者是存在的内存泄漏，还能发现一些代码逻辑上的错误；
-解决ViewController不释放的问题；
-Instruments的Leaks。运行时分析内存泄露情况并解决；
-
-根据这三步的">
-  
-    <link rel="alternate" href="/atom.xml" title="一枚iOS开发程序媛的进步阶梯" type="application/atom+xml">
-  
-  
-    <link rel="icon" href="/favicon.png">
-  
-  
-    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
-  
-  <link rel="stylesheet" href="/css/style.css">
-  
-
+解决ViewControlle">
+    
+    
+    
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="idreajay" />
+    <meta name="twitter:title" content="iOS app 内存泄露问题解决（一） | 一枚iOS开发程序媛的进步阶梯" />
+      
+    
+    
+    <link rel="alternate" href="atom.xml" title="一枚iOS开发程序媛的进步阶梯" type="application/atom+xml">
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/pacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/pacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 
-<body>
-  <div id="container">
-    <div id="wrap">
-      <header id="header">
-  <div id="banner"></div>
-  <div id="header-outer" class="outer">
-    <div id="header-title" class="inner">
-      <h1 id="logo-wrap">
-        <a href="/" id="logo">一枚iOS开发程序媛的进步阶梯</a>
-      </h1>
-      
-        <h2 id="subtitle-wrap">
-          <a href="/" id="subtitle">简书博客地址：http://www.jianshu.com/users/ffa5cb2a5d4e/latest_articles</a>
-        </h2>
-      
-    </div>
-    <div id="header-inner" class="inner">
-      <nav id="main-nav">
-        <a id="main-nav-toggle" class="nav-icon"></a>
-        
-          <a class="main-nav-link" href="/">Home</a>
-        
-          <a class="main-nav-link" href="/archives">Archives</a>
-        
-      </nav>
-      <nav id="sub-nav">
-        
-          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
-        
-        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
-      </nav>
-      <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" results="0" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://qinghong.github.io"></form>
-      </div>
-    </div>
-  </div>
+  <body>
+    <header>
+      <div>
+		
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="一枚iOS开发程序媛的进步阶梯">一枚iOS开发程序媛的进步阶梯</a></h1>
+				<h2 class="blog-motto">简书博客地址：http://www.jianshu.com/users/ffa5cb2a5d4e/latest_articles</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">首页</a></li>
+					
+						<li><a href="/archives">文章</a></li>
+					
+						<li><a href="/about">关于</a></li>
+					
+						<li><a href="/atom.xml">RSS订阅</a></li>
+					
+					<li>
+					
+					<form class="search" action="/search/index.html" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="text" id="search" name="q" autocomplete="off" maxlength="30" placeholder="Search" />
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2016/07/25/ios_app_memory_leak_1/" title="iOS app 内存泄露问题解决（一）" itemprop="url">iOS app 内存泄露问题解决（一）</a>
+  </h1>
+  <!-- 显示作者
+  <p class="article-author">By
+    
+      <a href="http://qinghong.github.io" title="Qinghong Liu">Qinghong Liu</a>
+    </p>
+  -->  
+  <p class="article-time">
+    <time datetime="2016-07-25T00:55:29.000Z" itemprop="datePublished">2016-07-25</time>
+    Updated:<time datetime="2016-07-25T12:38:38.000Z" itemprop="dateModified">2016-07-25</time>
+    
+  </p>
 </header>
-      <div class="outer">
-        <section id="main"><article id="post-ios_app_memory_leak_1" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2016/07/25/ios_app_memory_leak_1/" class="article-date">
-  <time datetime="2016-07-25T00:55:29.000Z" itemprop="datePublished">2016-07-25</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/iOS-develop/">iOS develop</a>
-  </div>
 
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 class="article-title" itemprop="name">
-      iOS app 内存泄露问题解决（一）
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="一、开篇"><a href="#一、开篇" class="headerlink" title="一、开篇"></a>一、开篇</h3><p>最近几天在做APP的性能优化问题，遇到了很多问题，所以来总结和分享一下。</p>
+	<div class="article-content">
+		
+		
+		<div id="toc" class="toc-article">
+			<strong class="toc-title">Contents</strong>
+		<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、开篇"><span class="toc-number">1.</span> <span class="toc-text">一、开篇</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、内存泄露相关的基础知识"><span class="toc-number">2.</span> <span class="toc-text">二、内存泄露相关的基础知识</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-概念"><span class="toc-number">2.1.</span> <span class="toc-text">1.概念</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-可能引起的问题"><span class="toc-number">2.2.</span> <span class="toc-text">2. 可能引起的问题</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、Analyze检测出的几种常见问题"><span class="toc-number">3.</span> <span class="toc-text">三、Analyze检测出的几种常见问题</span></a></li></ol>
+		</div>
+		
+		<h3 id="一、开篇"><a href="#一、开篇" class="headerlink" title="一、开篇"></a>一、开篇</h3><p>最近几天在做APP的性能优化问题，遇到了很多问题，所以来总结和分享一下。</p>
 <p>内存泄露解决分为了三步：</p>
 <ol>
 <li>静态分析：Instruments的Analyze。通过静态分析我们可以最初步的了解到代码的一些不规范的地方或者是存在的内存泄漏，还能发现一些代码逻辑上的错误；</li>
@@ -163,117 +148,268 @@ if(index == 1){
 <ol>
 <li>Analyze还能检查出一些逻辑上的错误，并且指出原因，简直太好用了。不出例子了，因为代码已经解决了好几天了，现在不存在有逻辑错误的代码了。</li>
 </ol>
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-share" id="share">
 
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://qinghong.github.io/2016/07/25/ios_app_memory_leak_1/" data-id="cir22x35c00006kkk6ecorbzg" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
   
-    
-<nav id="article-nav">
-  
-  
-    <a href="/2016/07/25/ios_app_memory_leak_2/" id="article-nav-older" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">iOS APP内存泄露问题解决（二）</div>
-    </a>
-  
+<!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+    <span class="jiathis_txt">分享到：</span>
+    <a class="jiathis_button_qzone"></a>
+    <a class="jiathis_button_tsina"></a>
+    <a class="jiathis_button_tqq"></a>
+    <a class="jiathis_button_weixin"></a>
+    <a class="jiathis_button_renren"></a>
+    <a href="http://www.jiathis.com/share?uid=1987046" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+    <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config = {data_track_clickback:'true'};
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1987046" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+
+
+</div>
+
+<div class="article-categories">
+  <span></span>
+  <a class="article-category-link" href="/categories/iOS-develop/">iOS develop</a>
+</div>
+
+
+
+</footer>   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+
+<div class="next">
+<a href="/2016/07/25/ios_app_memory_leak_2/"  title="iOS APP内存泄露问题解决（二）">
+ <strong>Next:</strong><br/> 
+ <span>iOS APP内存泄露问题解决（二）
+</span>
+</a>
+</div>
+
 </nav>
 
-  
-</article>
+	<!-- 多说-->
 
+<section class="comment">
+<div class="ds-thread" data-thread-key="post-iOS app 内存泄露问题解决（一）" data-title="iOS app 内存泄露问题解决（一）" data-url="http://qinghong.github.io/2016/07/25/ios_app_memory_leak_1/"></div>
 </section>
-        
-          <aside id="sidebar">
+<!-- disqus-->
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
+<aside class="clearfix">
+
+  <p class="asidetitle">关注</p>
+<iframe width="100%" height="120" class="share_self" marginheight="5px" frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=120&fansRow=2&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=2583230784&verifier=1d07a1a0&dpc=1"></iframe>
+
   
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Categories</h3>
-    <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/iOS-develop/">iOS develop</a></li></ul>
-    </div>
-  </div>
+<div class="categorieslist">
+	<p class="asidetitle">Categories</p>
+		<ul>
+		
+			<li><a href="/categories/iOS-develop/" title="iOS develop">iOS develop<sup>4</sup></a></li>
+		
+		</ul>
+</div>
 
 
   
-    
 
-  
-    
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Archives</h3>
-    <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/07/">July 2016</a></li></ul>
-    </div>
-  </div>
+  <div class="linkslist">
+  <p class="asidetitle">Links</p>
+    <ul>
+      <li><a href="http://blog.csdn.net/dreajay" target="_blank" title="dreajay csdn">CSDN</a></li>
+      <li><a href="https://github.com/dreajay" target="_blank" title="dreajay github">github</a></li>
+      <li><a href="http://www.douban.com/people/72514701/" target="_blank" title="dreajay豆瓣">豆瓣</a></li>
+    </ul>
+</div>
 
 
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Recent Posts</h3>
-    <div class="widget">
-      <ul>
-        
-          <li>
-            <a href="/2016/07/25/ios_app_memory_leak_1/">iOS app 内存泄露问题解决（一）</a>
-          </li>
-        
-          <li>
-            <a href="/2016/07/25/ios_app_memory_leak_2/">iOS APP内存泄露问题解决（二）</a>
-          </li>
-        
-          <li>
-            <a href="/2016/07/25/iOS app 键盘卡顿问题解决 /">iOS app 键盘卡顿问题解决</a>
-          </li>
-        
-          <li>
-            <a href="/2016/07/25/iOS几个小知识点整理/">iOS 几个小知识点整理</a>
-          </li>
-        
-      </ul>
-    </div>
-  </div>
+  <div class="rsspart">
+	<a href="atom.xml" target="_blank" title="rss">RSS</a>
+</div>
 
-  
 </aside>
-        
-      </div>
-      <footer id="footer">
-  
-  <div class="outer">
-    <div id="footer-info" class="inner">
-      &copy; 2016 Qinghong Liu<br>
-      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+</div>
     </div>
-  </div>
+    <footer><div id="footer" >
+	
+	
+	<section class="info">
+		<p> 没有礁石，就没有美丽的浪花；没有挫折，就没有壮丽的人生！ <br/>
+			再长的路，一步步也能走完，再短的路，不迈开双脚也无法到达，平凡的脚步也可以走完伟大的行程！</p>
+	</section>
+	 
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/2583230784" target="_blank" title="weibo"></a>
+		
+		
+		<a href="https://twitter.com/idreajay" target="_blank" title="twitter"></a>
+		
+		
+		<a href="https://github.com/dreajay" target="_blank" title="github"></a>
+		
+		
+	</div>
+		<p class="copyright">Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/A-limon/pacman" target="_blank" title="pacman">pacman</a> © 2016 
+		
+		<a href="http://qinghong.github.io" target="_blank" title="Qinghong Liu">Qinghong Liu</a>
+		
+		</p>
+</div>
 </footer>
-    </div>
-    <nav id="mobile-nav">
-  
-    <a href="/" class="mobile-nav-link">Home</a>
-  
-    <a href="/archives" class="mobile-nav-link">Archives</a>
-  
-</nav>
-    
+    <script src="/js/jquery-2.1.0.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else
+    {
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+        
+    }
+  });
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+});
+</script>
 
-<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      h  = $('article h2')
+      ah = $('article h2'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  if(ah.length==0){
+    t.css('display','none');
+  }else{
+    c.click(function(){
+      ta.css('display', 'block').addClass('fadeIn');
+    });
+    o.click(function(){
+      ta.css('display', 'none');
+    });
+    $(window).scroll(function(){
+      ta.css("top",Math.max(140,320-$(this).scrollTop()));
+    });
+  };
+});
+</script>
 
 
-  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
-  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+<script type="text/javascript">
+  var duoshuoQuery = {short_name:"dreajaygithubblog"};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+</script> 
 
 
-<script src="/js/script.js"></script>
 
-  </div>
-</body>
+
+
+
+
+
+<script type="text/javascript">
+var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3F77edef7e6931022edbd2322ec66456e1' type='text/javascript'%3E%3C/script%3E"));
+</script>
+
+<div id="totop" style="position:fixed;bottom:150px;right:50px;cursor: pointer;">
+	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+</div>
+<script type="text/javascript">
+	(function($) { 
+		// When to show the scroll link
+		// higher number = scroll link appears further down the page   
+		var upperLimit = 300;
+		
+		// Our scroll link element
+		var scrollElem = $('#totop');
+	   
+		// Scroll to top speed
+		var scrollSpeed = 800;
+	   
+		// Show and hide the scroll to top link based on scroll position   
+		scrollElem.hide();
+		$(window).scroll(function () {            
+			var scrollTop = $(document).scrollTop();       
+			if ( scrollTop > upperLimit ) {
+				$(scrollElem).stop().fadeTo(300, 1); // fade back in           
+			}else{       
+				$(scrollElem).stop().fadeTo(300, 0); // fade out
+			}
+		});
+		// Scroll to top animation on click
+		$(scrollElem).click(function(){
+			$('html, body').animate({scrollTop:0}, scrollSpeed); return false;
+		});
+	})(jQuery);
+</script>
+
+
+  </body>
 </html>
+
