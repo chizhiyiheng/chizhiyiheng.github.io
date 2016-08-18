@@ -18,11 +18,6 @@ copy修饰不可变变量：等同于strong，增加引用计数，是浅拷贝�
     
     
     
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:site" content="idreajay" />
-    <meta name="twitter:title" content="iOS 几个小知识点整理 | 一枚iOS开发程序媛的进步阶梯" />
-      
-    
     
     <link rel="alternate" href="atom.xml" title="一枚iOS开发程序媛的进步阶梯" type="application/atom+xml">
     
@@ -44,7 +39,7 @@ copy修饰不可变变量：等同于strong，增加引用计数，是浅拷贝�
 				<h1 class="site-name"><a href="/" title="一枚iOS开发程序媛的进步阶梯">一枚iOS开发程序媛的进步阶梯</a></h1>
 				<h2 class="blog-motto">简书博客地址：http://www.jianshu.com/users/ffa5cb2a5d4e/latest_articles</h2>
 			</div>
-			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜單">
 			</a></div>
 			<nav class="animated">
 				<ul>
@@ -62,7 +57,7 @@ copy修饰不可变变量：等同于strong，增加引用计数，是浅拷贝�
 					
 					<form class="search" action="/search/index.html" method="get" accept-charset="utf-8">
 						<label>Search</label>
-						<input type="text" id="search" name="q" autocomplete="off" maxlength="30" placeholder="Search" />
+						<input type="text" id="search" name="q" autocomplete="off" maxlength="30" placeholder="搜索" />
 					</form>
 					
 					</li>
@@ -87,7 +82,7 @@ copy修饰不可变变量：等同于strong，增加引用计数，是浅拷贝�
   -->  
   <p class="article-time">
     <time datetime="2016-07-25T00:55:29.000Z" itemprop="datePublished">2016-07-25</time>
-    Updated:<time datetime="2016-07-25T13:55:29.000Z" itemprop="dateModified">2016-07-25</time>
+    更新日期:<time datetime="2016-07-25T13:55:29.000Z" itemprop="dateModified">2016-07-25</time>
     
   </p>
 </header>
@@ -96,7 +91,7 @@ copy修饰不可变变量：等同于strong，增加引用计数，是浅拷贝�
 		
 		
 		<div id="toc" class="toc-article">
-			<strong class="toc-title">Contents</strong>
+			<strong class="toc-title">文章目錄</strong>
 		<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、NSString用copy还是strong"><span class="toc-number">1.</span> <span class="toc-text">一、NSString用copy还是strong</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、assign和weak的区别"><span class="toc-number">2.</span> <span class="toc-text">二、assign和weak的区别</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、单例相关"><span class="toc-number">3.</span> <span class="toc-text">三、单例相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四、ARC和MRC"><span class="toc-number">4.</span> <span class="toc-text">四、ARC和MRC</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#五、KVO和KVC"><span class="toc-number">5.</span> <span class="toc-text">五、KVO和KVC</span></a></li></ol>
 		</div>
 		
@@ -193,7 +188,7 @@ var jiathis_config = {data_track_clickback:'true'};
  
  <div class="prev" >
  <a href="/2016/07/25/iOS app 键盘卡顿问题解决 /" title="iOS app 键盘卡顿问题解决">
-  <strong>Prev:</strong><br/>
+  <strong>上一頁:</strong><br/>
   <span>
   iOS app 键盘卡顿问题解决</span>
 </a>
@@ -211,10 +206,10 @@ var jiathis_config = {data_track_clickback:'true'};
 
 
 </div>  
-      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
+      <div class="openaside"><a class="navbutton" href="#" title="顯示側邊欄"></a></div>
 
 <div id="asidepart">
-<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
+<div class="closeaside"><a class="closebutton" href="#" title="隱藏側邊欄"></a></div>
 <aside class="clearfix">
 
   <p class="asidetitle">关注</p>
@@ -222,7 +217,7 @@ var jiathis_config = {data_track_clickback:'true'};
 
   
 <div class="categorieslist">
-	<p class="asidetitle">Categories</p>
+	<p class="asidetitle">分類</p>
 		<ul>
 		
 			<li><a href="/categories/iOS-develop/" title="iOS develop">iOS develop<sup>4</sup></a></li>
@@ -234,7 +229,7 @@ var jiathis_config = {data_track_clickback:'true'};
   
 
   <div class="linkslist">
-  <p class="asidetitle">Links</p>
+  <p class="asidetitle">友情鏈接</p>
     <ul>
       <li><a href="http://blog.csdn.net/dreajay" target="_blank" title="dreajay csdn">CSDN</a></li>
       <li><a href="https://github.com/dreajay" target="_blank" title="dreajay github">github</a></li>
@@ -244,7 +239,7 @@ var jiathis_config = {data_track_clickback:'true'};
 
 
   <div class="rsspart">
-	<a href="atom.xml" target="_blank" title="rss">RSS</a>
+	<a href="atom.xml" target="_blank" title="rss">RSS 訂閱</a>
 </div>
 
 </aside>
@@ -260,13 +255,7 @@ var jiathis_config = {data_track_clickback:'true'};
 	 
 	<div class="social-font" class="clearfix">
 		
-		<a href="http://weibo.com/2583230784" target="_blank" title="weibo"></a>
 		
-		
-		<a href="https://twitter.com/idreajay" target="_blank" title="twitter"></a>
-		
-		
-		<a href="https://github.com/dreajay" target="_blank" title="github"></a>
 		
 		
 	</div>
